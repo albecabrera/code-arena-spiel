@@ -214,17 +214,32 @@ table.fb tr:hover td{background:rgba(255,255,255,.04)}
 
 /* ---------- Kurzlink & QR (Start) ---------- */
 .join-box{
-  background:var(--panel);border:1px solid var(--panel-border);border-radius:var(--r);
-  padding:24px 30px;max-width:420px;width:100%;text-align:center;
+  position:relative;
+  background:linear-gradient(160deg,rgba(34,211,238,.16),rgba(232,121,249,.12));
+  border:2px solid rgba(34,211,238,.55);border-radius:var(--r);
+  padding:28px 34px;max-width:480px;width:100%;text-align:center;
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 0 0 1px rgba(34,211,238,.15) inset, 0 18px 55px rgba(34,211,238,.22);
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  animation:joinGlow 2.6s ease-in-out infinite;
 }
-.join-box .join-lbl{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.16em;font-weight:700}
+@keyframes joinGlow{
+  0%,100%{box-shadow:0 0 0 1px rgba(34,211,238,.15) inset, 0 18px 55px rgba(34,211,238,.22)}
+  50%{box-shadow:0 0 0 1px rgba(34,211,238,.3) inset, 0 18px 65px rgba(34,211,238,.4)}
+}
+.join-box .join-lbl{
+  color:var(--cyan);font-size:.9rem;text-transform:uppercase;letter-spacing:.2em;font-weight:900;
+}
 .join-link{
-  display:block;margin:8px 0 16px;font-size:clamp(1.6rem,5vw,2.3rem);font-weight:900;letter-spacing:.02em;
-  color:var(--cyan);text-decoration:none;word-break:break-word;
+  display:block;margin:6px 0 18px;font-size:clamp(1.9rem,6vw,2.9rem);font-weight:900;letter-spacing:.01em;
+  background:linear-gradient(92deg,var(--cyan),var(--violet) 55%,var(--magenta));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-decoration:none;word-break:break-word;line-height:1.15;
 }
 .join-link:hover{text-decoration:underline}
-.join-box img{width:170px;height:170px;border-radius:14px;background:#fff;padding:8px;display:block;margin:0 auto}
+.join-box img{width:220px;height:220px;border-radius:16px;background:#fff;padding:10px;display:block;margin:0 auto;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.join-hint{color:var(--muted);font-size:.85rem;margin-top:2px}
+@media (prefers-reduced-motion: reduce){.join-box{animation:none}}
 
 /* ---------- Lehrkraft-Ankündigung (Danke) ---------- */
 .teacher-note{
@@ -248,6 +263,12 @@ table.fb tr:hover td{background:rgba(255,255,255,.04)}
   <h1 class="title">CODE ARENA</h1>
   <p class="subtitle">Beantworte Informatik-Fragen und schalte Action-Level frei!
      Drei Spielmodi warten auf dich – sammle Punkte und stelle einen Highscore auf. 🚀</p>
+  <div class="join-box">
+    <span class="join-lbl">📱 Direkt anmelden</span>
+    <a class="join-link" id="join-link" href="https://albecabrera.github.io/code-arena-spiel/" target="_blank" rel="noopener">albecabrera.github.io/code-arena-spiel</a>
+    <img id="join-qr" alt="QR-Code zum Spiel" width="220" height="220">
+    <span class="join-hint">QR-Code scannen oder Link eintippen</span>
+  </div>
   <div class="panel">
     <div class="controls-grid">
       <div class="ctrl"><span class="emoji">☄️</span><b>Meteorsturm</b>
@@ -257,11 +278,6 @@ table.fb tr:hover td{background:rgba(255,255,255,.04)}
       <div class="ctrl"><span class="emoji">🦠</span><b>Viren-Abwehr</b>
         <span>Bewegen: <kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> · Schießen: <kbd>Leertaste</kbd> / <kbd>W</kbd></span></div>
     </div>
-  </div>
-  <div class="join-box">
-    <span class="join-lbl">Direkt anmelden</span>
-    <a class="join-link" id="join-link" href="https://albecabrera.github.io/code-arena-spiel/" target="_blank" rel="noopener">albecabrera.github.io/code-arena-spiel</a>
-    <img id="join-qr" alt="QR-Code zum Spiel" width="170" height="170">
   </div>
   <button class="btn" id="btn-start">▶ &nbsp;Los geht's!</button>
 </div>
@@ -468,7 +484,7 @@ function showScreen(id){
 /* ================= Kurzlink & QR ================= */
 (function(){
   const url=$("#join-link").href;
-  $("#join-qr").src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&margin=0&data="+encodeURIComponent(url);
+  $("#join-qr").src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data="+encodeURIComponent(url);
 })();
 
 /* ================= Sound (Web Audio, keine Dateien) ================= */
