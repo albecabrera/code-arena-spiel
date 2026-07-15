@@ -29,7 +29,13 @@ Ein Klick auf **„▶ Los geht's!“** fordert den Browser-Vollbildmodus an (`r
 
 Pfeiltasten und WASD sind gleichwertig nutzbar (siehe `normKey()` im Script).
 
-Vor jedem Level erscheint ein 2-3 Sekunden langer Countdown-Screen mit Levelname, klarer Anweisung ("worum geht's") und der passenden Tastenkombination — erst danach startet das Level automatisch (`starteLevel()`).
+Vor jedem Level erscheint ein Anweisungs-Overlay mit drei visuellen Legenden-Zeilen (**Das bist du** / **Sammeln** — grün / **Gefahr** — rot) plus großen Tasten-Symbolen. Beim **ersten** Mal pro Leveltyp zählt der Countdown von 5 (mehr Lesezeit), danach von 3. Am Ende blitzt ein grünes **GO!** auf und das Level startet automatisch (`starteLevel()`).
+
+## Sound & Feedback-Effekte
+
+- Sound-Effekte werden zur Laufzeit per **Web Audio API** synthetisiert (keine Audiodateien): richtige/falsche Antwort, Einsammeln, Schuss, Treffer, Countdown-Ticks, GO!, Level-Fanfare.
+- 🔊/🔇-Button im HUD schaltet den Ton um; die Wahl wird in `localStorage` (`ca-ton`) gespeichert.
+- Punkteanzeige am Level-Ende zählt animiert hoch (`zaehleHoch()`).
 
 ## Kurzlink & QR-Code
 

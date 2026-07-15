@@ -118,6 +118,8 @@ kbd{
 }
 .hud .hud-item{display:flex;align-items:center;gap:8px;font-weight:800}
 .hud .lbl{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+#btn-mute{background:none;border:1px solid var(--panel-border);border-radius:10px;font-size:1.05rem;padding:4px 10px;cursor:pointer;transition:border-color .2s}
+#btn-mute:hover{border-color:var(--cyan)}
 #hud-score{font-size:1.25rem;color:var(--yellow);min-width:64px}
 #hud-lives{font-size:1.1rem;letter-spacing:2px}
 .timewrap{flex:1;height:10px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
@@ -132,14 +134,27 @@ canvas#game{
 }
 #countdown{
   position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
-  gap:14px;border-radius:var(--r);background:rgba(10,14,34,.72);backdrop-filter:blur(6px);z-index:5;
+  gap:12px;border-radius:var(--r);background:rgba(10,14,34,.86);backdrop-filter:blur(8px);z-index:5;padding:14px;
 }
 #countdown.show{display:flex}
-#cd-name{font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900;letter-spacing:.1em;
+#cd-name{font-size:clamp(1.5rem,4vw,2.4rem);font-weight:900;letter-spacing:.1em;
   background:linear-gradient(92deg,var(--yellow),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent}
-#cd-hint{color:var(--muted);font-size:1rem;text-align:center;max-width:420px;line-height:1.5;padding:0 16px}
-#cd-num{font-size:5rem;font-weight:900;color:var(--cyan);animation:cdPulse .95s ease infinite}
+.cd-legend{display:flex;flex-direction:column;gap:8px;margin:2px 0}
+.cd-row{
+  display:flex;align-items:center;gap:12px;font-weight:700;font-size:1.02rem;
+  background:rgba(255,255,255,.06);border:1px solid var(--panel-border);
+  border-radius:12px;padding:8px 18px;min-width:min(430px,80vw);
+}
+.cd-row .ico{font-size:1.6rem;width:38px;text-align:center;flex:none}
+.cd-row.good{border-color:rgba(52,211,153,.5)} .cd-row.good b{color:var(--green)}
+.cd-row.bad{border-color:rgba(251,113,133,.5)} .cd-row.bad b{color:var(--red)}
+#cd-keys{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:2px}
+#cd-keys kbd{font-size:1.15rem;padding:6px 14px;border-radius:9px;background:rgba(34,211,238,.15);border-color:rgba(34,211,238,.5);color:var(--cyan);font-weight:800}
+#cd-keys .sep{color:var(--muted);font-weight:700;font-size:.9rem}
+#cd-num{font-size:3.6rem;font-weight:900;color:var(--cyan);line-height:1;animation:cdPulse .95s ease infinite;min-height:64px}
+#cd-num.go{color:var(--green);animation:goPop .7s ease forwards}
 @keyframes cdPulse{0%{transform:scale(.6);opacity:0}25%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:.15}}
+@keyframes goPop{0%{transform:scale(.4);opacity:0}40%{transform:scale(1.5);opacity:1}100%{transform:scale(1);opacity:1}}
 
 /* ---------- Level-Ende / Statistik ---------- */
 .stats{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:18px 0}
@@ -269,12 +284,14 @@ table.fb tr:hover td{background:rgba(255,255,255,.04)}
     <div class="hud-item"><span class="lbl">Leben</span><span id="hud-lives">❤️❤️❤️</span></div>
     <div class="timewrap"><div id="hud-timebar"></div></div>
     <div class="hud-item"><span id="hud-level"></span></div>
+    <button id="btn-mute" title="Ton an/aus">🔊</button>
   </div>
   <div class="gamewrap">
     <canvas id="game" width="960" height="540"></canvas>
     <div id="countdown">
       <div id="cd-name"></div>
-      <div id="cd-hint"></div>
+      <div class="cd-legend" id="cd-legend"></div>
+      <div id="cd-keys"></div>
       <div id="cd-num">3</div>
     </div>
   </div>
@@ -454,6 +471,32 @@ function showScreen(id){
   $("#join-qr").src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&margin=0&data="+encodeURIComponent(url);
 })();
 
+/* ================= Sound (Web Audio, keine Dateien) ================= */
+let audioCtx=null, tonAn=(localStorage.getItem("ca-ton")!=="0");
+function initAudio(){ if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } }
+function ton(freq,dauer,typ="square",vol=.12,slide=0){
+  if(!tonAn||!audioCtx) return;
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain(), t=audioCtx.currentTime;
+  o.type=typ; o.frequency.setValueAtTime(freq,t);
+  if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),t+dauer);
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+dauer);
+  o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+dauer);
+}
+const SFX={
+  richtig(){ ton(523,.12,"square",.1); setTimeout(()=>ton(784,.18,"square",.1),110); },
+  falsch(){ ton(180,.25,"sawtooth",.08,-60); },
+  sammeln(){ ton(880,.09,"square",.09,300); },
+  schuss(){ ton(620,.08,"square",.06,-280); },
+  treffer(){ ton(140,.3,"sawtooth",.12,-70); },
+  tick(){ ton(660,.08,"sine",.09); },
+  go(){ ton(523,.1,"square",.1); setTimeout(()=>ton(659,.1,"square",.1),90); setTimeout(()=>ton(1047,.25,"square",.12),180); },
+  fanfare(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>ton(f,.22,"square",.1),i*130)); },
+};
+const muteBtn=$("#btn-mute");
+function muteUI(){ muteBtn.textContent=tonAn?"🔊":"🔇"; }
+muteBtn.onclick=()=>{ tonAn=!tonAn; localStorage.setItem("ca-ton",tonAn?"1":"0"); muteUI(); initAudio(); };
+muteUI();
+
 function confetti(n=42){
   const box=$("#confetti-box"), colors=["#22d3ee","#e879f9","#fbbf24","#34d399","#818cf8","#fb7185"];
   for(let i=0;i<n;i++){
@@ -518,10 +561,10 @@ function antwort(btn, korrekt){
     const bonus = versuche===0 ? 50 : 20;
     score+=bonus; richtigeFragen++;
     fb.textContent="Richtig! +"+bonus+" Punkte 🎉"; fb.className="q-feedback ok";
-    confetti();
+    confetti(); SFX.richtig();
     setTimeout(()=>starteLevel(LEVEL_REIHENFOLGE[gespielteLevels%3]), 1100);
   } else {
-    versuche++;
+    versuche++; SFX.falsch();
     btn.classList.add("wrong"); btn.disabled=true;
     if(versuche>=2){
       document.querySelectorAll(".ans").forEach(b=>{
@@ -565,31 +608,67 @@ let leben=3, levelScore=0, levelZeit=0;
 let particles=[], floaters=[], shake=0;
 
 const LEVEL_INFO={
-  dodge:{name:"☄️ METEORSTURM", hint:"Bewege dein Raumschiff mit ← → oder A/D. Weiche den Meteoriten aus und sammle die grünen Datenchips!"},
-  jump:{name:"🤖 BUG-RUN", hint:"Drücke die LEERTASTE oder W zum Springen. Weiche den roten Bugs aus und sammle die goldenen Bits!"},
-  shoot:{name:"🦠 VIREN-ABWEHR", hint:"Bewege dich mit ← →/A D, schieße mit LEERTASTE/W. Lass keinen Virus nach unten durch!"}
+  dodge:{
+    name:"☄️ METEORSTURM",
+    legend:[
+      {ico:"🚀", txt:"<b>Das bist du</b> – dein Raumschiff", cls:""},
+      {ico:"💾", txt:"<b>Sammle</b> grüne Datenchips <b>+10</b>", cls:"good"},
+      {ico:"☄️", txt:"<b>Weiche aus!</b> Meteoriten kosten 1 Leben", cls:"bad"},
+    ],
+    keys:'<kbd>←</kbd><kbd>→</kbd><span class="sep">oder</span><kbd>A</kbd><kbd>D</kbd><span class="sep">= bewegen</span>'
+  },
+  jump:{
+    name:"🤖 BUG-RUN",
+    legend:[
+      {ico:"🤖", txt:"<b>Das bist du</b> – dein Roboter rennt automatisch", cls:""},
+      {ico:"🪙", txt:"<b>Sammle</b> goldene Bits <b>+10</b>", cls:"good"},
+      {ico:"🐛", txt:"<b>Spring drüber!</b> Bugs kosten 1 Leben", cls:"bad"},
+    ],
+    keys:'<kbd>Leertaste</kbd><span class="sep">oder</span><kbd>W</kbd><span class="sep">= springen</span>'
+  },
+  shoot:{
+    name:"🦠 VIREN-ABWEHR",
+    legend:[
+      {ico:"🚀", txt:"<b>Das bist du</b> – verteidige die Linie unten", cls:""},
+      {ico:"🦠", txt:"<b>Schieße</b> Viren ab <b>+15</b>", cls:"good"},
+      {ico:"⚠️", txt:"<b>Achtung!</b> Virus durchgelassen oder berührt = 1 Leben", cls:"bad"},
+    ],
+    keys:'<kbd>←</kbd><kbd>→</kbd><span class="sep">/</span><kbd>A</kbd><kbd>D</kbd><span class="sep">bewegen ·</span><kbd>Leertaste</kbd><span class="sep">/</span><kbd>W</kbd><span class="sep">schießen</span>'
+  }
 };
 
+const levelGesehen=new Set(); // erstes Mal pro Leveltyp → längerer Countdown zum Lesen
 function starteLevel(typ){
   if(!sessionStart) sessionStart=Date.now();
   leben=3; levelScore=0; levelZeit=KONFIG.LEVEL_DAUER;
   particles=[]; floaters=[]; shake=0;
   level = typ==="dodge" ? new LevelDodge() : typ==="jump" ? new LevelJump() : new LevelShoot();
   level.typ=typ;
-  $("#hud-level").textContent=LEVEL_INFO[typ].name;
+  const info=LEVEL_INFO[typ];
+  $("#hud-level").textContent=info.name;
   updateHUD();
   showScreen("screen-level");
-  // Countdown
+  // Anweisungs-Overlay mit Legende + Countdown
   const cd=$("#countdown"); cd.classList.add("show");
-  $("#cd-name").textContent=LEVEL_INFO[typ].name;
-  $("#cd-hint").textContent=LEVEL_INFO[typ].hint;
-  let n=3; $("#cd-num").textContent=n;
+  $("#cd-name").textContent=info.name;
+  $("#cd-legend").innerHTML=info.legend.map(r=>
+    '<div class="cd-row '+r.cls+'"><span class="ico">'+r.ico+'</span><span>'+r.txt+'</span></div>').join("");
+  $("#cd-keys").innerHTML=info.keys;
+  const num=$("#cd-num"); num.classList.remove("go");
+  let n=levelGesehen.has(typ)?3:5; // beim ersten Mal mehr Lesezeit
+  levelGesehen.add(typ);
+  num.textContent=n; SFX.tick();
   render(); // erstes Standbild
   const iv=setInterval(()=>{
-    n--; if(n<=0){ clearInterval(iv); cd.classList.remove("show");
-      laufend=true; lastT=performance.now(); raf=requestAnimationFrame(loop);
-    } else $("#cd-num").textContent=n;
-  },900);
+    n--;
+    if(n<=0){
+      clearInterval(iv);
+      num.textContent="GO!"; num.classList.add("go"); SFX.go();
+      setTimeout(()=>{ cd.classList.remove("show");
+        laufend=true; lastT=performance.now(); raf=requestAnimationFrame(loop);
+      },550);
+    } else { num.textContent=n; SFX.tick(); }
+  },1000);
 }
 
 function loop(t){
@@ -616,6 +695,7 @@ function updateHUD(){
 function punkte(n,x,y,farbe){
   levelScore+=n;
   floaters.push({x,y,txt:(n>0?"+":"")+n,life:1,farbe:farbe||"#fbbf24"});
+  if(n>0) SFX.sammeln();
 }
 function explosion(x,y,farbe,n=16){
   for(let i=0;i<n;i++){
@@ -623,7 +703,7 @@ function explosion(x,y,farbe,n=16){
     particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:260,life:.5+Math.random()*.5,r:2+Math.random()*3,farbe});
   }
 }
-function treffer(){ leben--; shake=8; }
+function treffer(){ leben--; shake=8; SFX.treffer(); }
 
 function render(){
   cx.save();
@@ -824,6 +904,7 @@ class LevelShoot{
     if(this.cool<=0){
       this.cool=.28;
       this.schuesse.push({x:this.px,y:H-84});
+      SFX.schuss();
     }
   }
   update(dt){
@@ -880,6 +961,14 @@ class LevelShoot{
 }
 
 /* ================= Level-Ende ================= */
+function zaehleHoch(el,ziel,prefix=""){
+  const start=performance.now(), dauer=700;
+  (function step(t){
+    const p=Math.min(1,(t-start)/dauer), eased=1-Math.pow(1-p,3);
+    el.textContent=prefix+Math.round(ziel*eased);
+    if(p<1) requestAnimationFrame(step);
+  })(start);
+}
 function endeLevel(){
   laufend=false; cancelAnimationFrame(raf);
   gespielteLevels++;
@@ -887,9 +976,10 @@ function endeLevel(){
   score+=levelScore+bonus;
   $("#le-title").textContent = leben>0 ? "Level geschafft! 🎉" : "Alle Leben verloren! 💥";
   $("#le-sub").textContent = leben>0 ? "Stark gespielt – weiter geht's!" : "Kopf hoch, nächste Runde läuft besser!";
-  $("#le-levelscore").textContent=levelScore;
-  $("#le-bonus").textContent="+"+bonus;
-  $("#le-total").textContent=score;
+  if(leben>0) SFX.fanfare(); else SFX.falsch();
+  zaehleHoch($("#le-levelscore"),levelScore);
+  zaehleHoch($("#le-bonus"),bonus,"+");
+  zaehleHoch($("#le-total"),score);
   const elapsed=(Date.now()-sessionStart)/1000;
   feedbackFaellig = elapsed>=KONFIG.STUNDEN_DAUER;
   $("#btn-next").textContent = feedbackFaellig ? "Zum Feedback ➜" : "Weiter ➜";
@@ -902,7 +992,7 @@ function requestFS(){
   const req=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;
   if(req) req.call(el).catch(()=>{});
 }
-$("#btn-start").onclick=()=>{ requestFS(); sessionStart=Date.now(); naechsteFrage(); };
+$("#btn-start").onclick=()=>{ requestFS(); initAudio(); sessionStart=Date.now(); naechsteFrage(); };
 
 /* =====================================================
    FEEDBACK (anonym, geteilter Speicher) & LEHRERANSICHT
@@ -943,7 +1033,7 @@ $("#btn-fb-send").onclick=async ()=>{
   $("#th-score").textContent=score;
   $("#th-questions").textContent=richtigeFragen;
   $("#th-levels").textContent=gespielteLevels;
-  confetti(70);
+  confetti(70); SFX.fanfare();
   showScreen("screen-thanks");
   setTimeout(()=>confetti(60), 400);
   setTimeout(()=>confetti(60), 900);
