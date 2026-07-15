@@ -11,9 +11,13 @@ Schüler:innen beantworten Multiple-Choice-Fragen aus dem Informatikunterricht (
 ## Ablauf
 
 ```
-Start → Frage → Level (Action) → Level-Ende → nächste Frage → …
-      → (nach 25 Min oder Fragenkatalog leer) → Feedback → Danke-Screen
+Start (Fullscreen) → Frage → Anweisung (2-3s Countdown) → Level (Action) → Level-Ende → nächste Frage → …
+      → (nach 25 Min oder Fragenkatalog leer) → Feedback → Danke-Screen (Fullscreen)
 ```
+
+## Fullscreen-Modus
+
+Ein Klick auf **„▶ Los geht's!“** fordert den Browser-Vollbildmodus an (`requestFullscreen()`). Das Spiel bleibt bis zum Ende — inklusive Feedbackbogen und Danke-Screen — im Vollbild, damit die Schüler:innen alles gut lesen können (z. B. auf dem Beamer). Der Browser verlangt dafür eine echte Nutzer-Interaktion (Klick), daher lässt sich Vollbild nicht automatisch beim Laden aktivieren.
 
 ## Spielmodi
 
@@ -25,6 +29,8 @@ Start → Frage → Level (Action) → Level-Ende → nächste Frage → …
 
 Pfeiltasten und WASD sind gleichwertig nutzbar (siehe `normKey()` im Script).
 
+Vor jedem Level erscheint ein 2-3 Sekunden langer Countdown-Screen mit Levelname, klarer Anweisung ("worum geht's") und der passenden Tastenkombination — erst danach startet das Level automatisch (`starteLevel()`).
+
 ## Kurzlink & QR-Code
 
 Auf dem Start-Screen steht ein großer Kurzlink plus QR-Code, damit Schüler:innen das Spiel schnell auf dem eigenen Handy öffnen können. Der QR-Code wird zur Laufzeit über die QR-Server-API aus der Kurzlink-URL generiert (`#join-link` im HTML).
@@ -34,6 +40,7 @@ Auf dem Start-Screen steht ein großer Kurzlink plus QR-Code, damit Schüler:inn
 ## Feedback & Lehrkraft-Ansicht
 
 - Feedback (Sterne-Bewertung + 3 Freitextfelder) wird anonym über `window.storage` gespeichert (geteilter Speicher, keine Namen).
+- Die Freitextfelder erlauben normales Tippen (Groß-/Kleinschreibung, Leertaste, `a`/`d`/`w` etc.) — die Spiel-Tastensteuerung (WASD/Pfeile/Leertaste) ist deaktiviert, solange ein Textfeld fokussiert ist (siehe `inTextField()` im Script).
 - Zugang zur Auswertung über den 🔑-Button unten rechts, geschützt mit PIN (siehe `KONFIG.LEHRER_PIN`).
 - Auswertung zeigt alle Rückmeldungen als Tabelle, inkl. CSV-Export und "Alle löschen".
 

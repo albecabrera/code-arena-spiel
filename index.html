@@ -544,22 +544,30 @@ const W=cv.width, H=cv.height;
 const keys=new Set();
 const WASD={a:"ArrowLeft",A:"ArrowLeft",d:"ArrowRight",D:"ArrowRight",w:"ArrowUp",W:"ArrowUp"};
 function normKey(k){ return k===" "?"Space":(WASD[k]||k); }
+function inTextField(e){
+  const tag=(e.target&&e.target.tagName||"").toLowerCase();
+  return tag==="input"||tag==="textarea";
+}
 addEventListener("keydown",e=>{
+  if(inTextField(e)) return; // Buchstaben/Space normal tippen lassen (Feedback-Formular)
   if(["ArrowLeft","ArrowRight","ArrowUp"," ","Spacebar","a","A","d","D","w","W"].includes(e.key)) e.preventDefault();
   const k=normKey(e.key);
   keys.add(k);
   if(level && (k==="Space"||k==="ArrowUp")) level.press && level.press();
 });
-addEventListener("keyup",e=>keys.delete(normKey(e.key)));
+addEventListener("keyup",e=>{
+  if(inTextField(e)) return;
+  keys.delete(normKey(e.key));
+});
 
 let level=null, raf=null, lastT=0, laufend=false;
 let leben=3, levelScore=0, levelZeit=0;
 let particles=[], floaters=[], shake=0;
 
 const LEVEL_INFO={
-  dodge:{name:"☄️ METEORSTURM", hint:"Bewege dein Raumschiff mit ← und →. Weiche den Meteoriten aus und sammle die grünen Datenchips!"},
-  jump:{name:"🤖 BUG-RUN", hint:"Drücke die LEERTASTE zum Springen. Weiche den roten Bugs aus und sammle die goldenen Bits!"},
-  shoot:{name:"🦠 VIREN-ABWEHR", hint:"Bewege dich mit ← und →, schieße mit der LEERTASTE. Lass keinen Virus nach unten durch!"}
+  dodge:{name:"☄️ METEORSTURM", hint:"Bewege dein Raumschiff mit ← → oder A/D. Weiche den Meteoriten aus und sammle die grünen Datenchips!"},
+  jump:{name:"🤖 BUG-RUN", hint:"Drücke die LEERTASTE oder W zum Springen. Weiche den roten Bugs aus und sammle die goldenen Bits!"},
+  shoot:{name:"🦠 VIREN-ABWEHR", hint:"Bewege dich mit ← →/A D, schieße mit LEERTASTE/W. Lass keinen Virus nach unten durch!"}
 };
 
 function starteLevel(typ){
@@ -888,7 +896,13 @@ function endeLevel(){
   showScreen("screen-levelend");
 }
 $("#btn-next").onclick=()=>{ feedbackFaellig ? showScreen("screen-feedback") : naechsteFrage(); };
-$("#btn-start").onclick=()=>{ sessionStart=Date.now(); naechsteFrage(); };
+
+function requestFS(){
+  const el=document.documentElement;
+  const req=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;
+  if(req) req.call(el).catch(()=>{});
+}
+$("#btn-start").onclick=()=>{ requestFS(); sessionStart=Date.now(); naechsteFrage(); };
 
 /* =====================================================
    FEEDBACK (anonym, geteilter Speicher) & LEHRERANSICHT
