@@ -2,7 +2,7 @@
 
 Browser-Minigame für die Informatik-Belohnungsstunde (WP-Informatik, Klasse 7). Eine einzige HTML-Datei, kein Build-Prozess, keine Installation — einfach öffnen und spielen.
 
-**Live:** https://albecabrera.github.io/code_arena_spiel/
+**Live:** https://albecabrera.github.io/code-arena-spiel/
 
 ## Konzept
 
