@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CODE ARENA – Informatik-Belohnungsstunde</title>
+<style>
+:root{
+  --bg1:#0b1026; --bg2:#1c1145; --bg3:#251458;
+  --panel:rgba(255,255,255,.06); --panel-border:rgba(255,255,255,.14);
+  --text:#eef2ff; --muted:#9aa3c7;
+  --cyan:#22d3ee; --magenta:#e879f9; --yellow:#fbbf24;
+  --green:#34d399; --red:#fb7185; --violet:#818cf8;
+  --r:22px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color:var(--text);
+  background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 55%,var(--bg3) 100%);
+  min-height:100vh; overflow-x:hidden;
+}
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+.screen{
+  position:relative;z-index:2;display:none;min-height:100vh;
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:28px 18px;gap:22px;
+}
+.screen.active{display:flex;animation:screenIn .55s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes screenIn{from{opacity:0;transform:translateY(26px) scale(.97)}to{opacity:1;transform:none}}
+
+.panel{
+  background:var(--panel);border:1px solid var(--panel-border);
+  border-radius:var(--r);padding:30px 34px;max-width:720px;width:100%;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+}
+h1.title{
+  font-size:clamp(2.4rem,7vw,4.2rem);font-weight:900;letter-spacing:.06em;
+  background:linear-gradient(92deg,var(--cyan),var(--violet) 45%,var(--magenta));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-align:center;animation:floaty 4s ease-in-out infinite;
+  filter:drop-shadow(0 6px 24px rgba(129,140,248,.35));
+}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.subtitle{color:var(--muted);text-align:center;font-size:1.05rem;max-width:560px;line-height:1.55}
+.tagline{
+  display:inline-block;padding:6px 16px;border-radius:999px;font-weight:700;font-size:.8rem;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);
+  border:1px solid rgba(34,211,238,.4);background:rgba(34,211,238,.08);
+}
+.btn{
+  font:inherit;font-weight:800;font-size:1.05rem;color:#0b1026;cursor:pointer;
+  padding:15px 38px;border:none;border-radius:16px;
+  background:linear-gradient(92deg,var(--cyan),var(--violet));
+  box-shadow:0 10px 30px rgba(34,211,238,.35), inset 0 1px 0 rgba(255,255,255,.5);
+  transition:transform .16s ease, box-shadow .16s ease, filter .16s;
+}
+.btn:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 16px 40px rgba(34,211,238,.5)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn.secondary{background:rgba(255,255,255,.1);color:var(--text);box-shadow:none;border:1px solid var(--panel-border)}
+.btn.small{padding:9px 18px;font-size:.85rem;border-radius:12px}
+
+.controls-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:8px}
+.ctrl{
+  background:rgba(255,255,255,.05);border:1px solid var(--panel-border);
+  border-radius:16px;padding:16px;text-align:center;
+  transition:transform .2s, border-color .2s;
+}
+.ctrl:hover{transform:translateY(-4px);border-color:rgba(34,211,238,.5)}
+.ctrl .emoji{font-size:1.9rem;display:block;margin-bottom:6px}
+.ctrl b{display:block;margin-bottom:4px;font-size:.95rem}
+.ctrl span{color:var(--muted);font-size:.82rem;line-height:1.4}
+kbd{
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+  border-bottom-width:3px;border-radius:6px;padding:1px 7px;font-family:inherit;font-size:.82em;
+}
+
+/* ---------- Frage ---------- */
+.q-badge{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 18px;border-radius:999px;
+  font-weight:800;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;
+  margin-bottom:18px;
+}
+.q-badge.caesar{background:rgba(251,191,36,.14);color:var(--yellow);border:1px solid rgba(251,191,36,.4)}
+.q-badge.binaer{background:rgba(34,211,238,.14);color:var(--cyan);border:1px solid rgba(34,211,238,.4)}
+.q-badge.scratch{background:rgba(232,121,249,.14);color:var(--magenta);border:1px solid rgba(232,121,249,.4)}
+.q-badge.xlogo{background:rgba(52,211,153,.14);color:var(--green);border:1px solid rgba(52,211,153,.4)}
+.q-text{font-size:1.45rem;font-weight:800;line-height:1.4;margin-bottom:24px}
+.q-text code{
+  font-family:ui-monospace,Consolas,monospace;background:rgba(255,255,255,.1);
+  padding:2px 10px;border-radius:8px;font-size:.92em;color:var(--cyan);
+}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){.answers{grid-template-columns:1fr}}
+.ans{
+  font:inherit;font-size:1.02rem;font-weight:600;color:var(--text);cursor:pointer;text-align:left;
+  background:rgba(255,255,255,.06);border:1.5px solid var(--panel-border);border-radius:15px;
+  padding:16px 18px;transition:all .18s;position:relative;
+}
+.ans:hover:not(:disabled){background:rgba(129,140,248,.16);border-color:var(--violet);transform:translateY(-2px)}
+.ans:disabled{cursor:default;opacity:.55}
+.ans.correct{background:rgba(52,211,153,.2)!important;border-color:var(--green)!important;opacity:1!important;animation:pop .45s}
+.ans.wrong{background:rgba(251,113,133,.18)!important;border-color:var(--red)!important;animation:shakeX .45s}
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.06)}100%{transform:scale(1)}}
+@keyframes shakeX{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+.q-feedback{min-height:30px;margin-top:16px;font-weight:800;font-size:1.05rem;text-align:center;transition:opacity .3s}
+.q-feedback.ok{color:var(--green)} .q-feedback.no{color:var(--red)}
+.q-progress{color:var(--muted);font-size:.85rem;text-align:center;margin-top:14px}
+
+/* ---------- Spiel ---------- */
+#screen-level{justify-content:flex-start;padding-top:18px;gap:12px}
+.hud{
+  display:flex;align-items:center;gap:18px;width:min(960px,96vw);
+  background:var(--panel);border:1px solid var(--panel-border);border-radius:16px;
+  padding:10px 20px;backdrop-filter:blur(10px);
+}
+.hud .hud-item{display:flex;align-items:center;gap:8px;font-weight:800}
+.hud .lbl{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+#hud-score{font-size:1.25rem;color:var(--yellow);min-width:64px}
+#hud-lives{font-size:1.1rem;letter-spacing:2px}
+.timewrap{flex:1;height:10px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden}
+#hud-timebar{height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width .3s linear}
+#hud-level{color:var(--magenta);font-size:.95rem}
+.gamewrap{position:relative;width:min(960px,96vw)}
+canvas#game{
+  display:block;width:100%;border-radius:var(--r);
+  border:1px solid var(--panel-border);
+  box-shadow:0 24px 70px rgba(0,0,0,.55);
+  background:#0a0e22;
+}
+#countdown{
+  position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;border-radius:var(--r);background:rgba(10,14,34,.72);backdrop-filter:blur(6px);z-index:5;
+}
+#countdown.show{display:flex}
+#cd-name{font-size:clamp(1.6rem,4vw,2.6rem);font-weight:900;letter-spacing:.1em;
+  background:linear-gradient(92deg,var(--yellow),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent}
+#cd-hint{color:var(--muted);font-size:1rem;text-align:center;max-width:420px;line-height:1.5;padding:0 16px}
+#cd-num{font-size:5rem;font-weight:900;color:var(--cyan);animation:cdPulse .95s ease infinite}
+@keyframes cdPulse{0%{transform:scale(.6);opacity:0}25%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:.15}}
+
+/* ---------- Level-Ende / Statistik ---------- */
+.stats{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:18px 0}
+.stat{
+  background:rgba(255,255,255,.05);border:1px solid var(--panel-border);border-radius:16px;
+  padding:16px 26px;text-align:center;min-width:130px;
+}
+.stat .val{font-size:1.9rem;font-weight:900;color:var(--cyan)}
+.stat .lbl{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.12em;margin-top:4px}
+
+/* ---------- Feedback ---------- */
+.stars{display:flex;gap:10px;justify-content:center;margin:10px 0 4px}
+.star{font-size:2.4rem;cursor:pointer;filter:grayscale(1) opacity(.4);transition:transform .15s,filter .15s;background:none;border:none}
+.star:hover{transform:scale(1.2)}
+.star.on{filter:none;transform:scale(1.08)}
+.fb-field{margin-top:18px;text-align:left}
+.fb-field label{display:block;font-weight:700;margin-bottom:8px;font-size:.98rem}
+.fb-field textarea{
+  width:100%;min-height:74px;resize:vertical;font:inherit;color:var(--text);
+  background:rgba(255,255,255,.07);border:1.5px solid var(--panel-border);border-radius:13px;padding:12px 14px;
+}
+.fb-field textarea:focus{outline:none;border-color:var(--cyan)}
+.anon-note{display:flex;align-items:center;gap:8px;justify-content:center;color:var(--muted);font-size:.85rem;margin-top:14px}
+
+/* ---------- Lehreransicht ---------- */
+#teacher-link{position:fixed;right:14px;bottom:12px;z-index:9;color:var(--muted);opacity:.55;font-size:.8rem;background:none;border:none;cursor:pointer;font-family:inherit}
+#teacher-link:hover{opacity:1;color:var(--cyan)}
+.tbl-wrap{overflow-x:auto;margin-top:16px;border-radius:14px;border:1px solid var(--panel-border)}
+table.fb{border-collapse:collapse;width:100%;font-size:.9rem;min-width:640px}
+table.fb th{
+  background:rgba(129,140,248,.15);text-align:left;padding:10px 14px;font-size:.75rem;
+  text-transform:uppercase;letter-spacing:.1em;color:var(--violet);white-space:nowrap;
+}
+table.fb td{padding:10px 14px;border-top:1px solid rgba(255,255,255,.08);vertical-align:top;line-height:1.45}
+table.fb tr:hover td{background:rgba(255,255,255,.04)}
+.avg-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px}
+.modal{
+  position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;
+  background:rgba(5,8,22,.7);backdrop-filter:blur(6px);
+}
+.modal.show{display:flex}
+.modal .panel{max-width:360px;text-align:center}
+.modal input{
+  width:100%;font:inherit;font-size:1.3rem;text-align:center;letter-spacing:.4em;color:var(--text);
+  background:rgba(255,255,255,.08);border:1.5px solid var(--panel-border);border-radius:12px;padding:12px;margin:16px 0;
+}
+.modal input:focus{outline:none;border-color:var(--cyan)}
+
+/* ---------- Konfetti & Punkte-Popup ---------- */
+#confetti-box{position:fixed;inset:0;pointer-events:none;z-index:30;overflow:hidden}
+.conf{position:absolute;top:-14px;width:10px;height:14px;border-radius:3px;animation:confFall linear forwards}
+@keyframes confFall{to{transform:translateY(105vh) rotate(720deg);opacity:.2}}
+
+.row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.center{text-align:center}
+.hidden{display:none!important}
+
+/* ---------- Kurzlink & QR (Start) ---------- */
+.join-box{
+  background:var(--panel);border:1px solid var(--panel-border);border-radius:var(--r);
+  padding:24px 30px;max-width:420px;width:100%;text-align:center;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+.join-box .join-lbl{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.16em;font-weight:700}
+.join-link{
+  display:block;margin:8px 0 16px;font-size:clamp(1.6rem,5vw,2.3rem);font-weight:900;letter-spacing:.02em;
+  color:var(--cyan);text-decoration:none;word-break:break-word;
+}
+.join-link:hover{text-decoration:underline}
+.join-box img{width:170px;height:170px;border-radius:14px;background:#fff;padding:8px;display:block;margin:0 auto}
+
+/* ---------- Lehrkraft-Ankündigung (Danke) ---------- */
+.teacher-note{
+  margin-top:22px;padding:20px 26px;border-radius:18px;max-width:600px;
+  background:linear-gradient(92deg,rgba(34,211,238,.14),rgba(232,121,249,.14));
+  border:1.5px solid rgba(34,211,238,.4);font-size:1.15rem;font-weight:700;line-height:1.5;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01s!important;transition-duration:.01s!important}
+}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div id="confetti-box"></div>
+
+<!-- ================= START ================= -->
+<div class="screen active" id="screen-start">
+  <span class="tagline">Belohnungsstunde · WP-Informatik · Klasse 7</span>
+  <h1 class="title">CODE ARENA</h1>
+  <p class="subtitle">Beantworte Informatik-Fragen und schalte Action-Level frei!
+     Drei Spielmodi warten auf dich – sammle Punkte und stelle einen Highscore auf. 🚀</p>
+  <div class="panel">
+    <div class="controls-grid">
+      <div class="ctrl"><span class="emoji">☄️</span><b>Meteorsturm</b>
+        <span>Weiche aus mit <kbd>←</kbd> <kbd>→</kbd> oder <kbd>A</kbd> <kbd>D</kbd><br>Sammle Datenchips!</span></div>
+      <div class="ctrl"><span class="emoji">🤖</span><b>Bug-Run</b>
+        <span>Springe mit <kbd>Leertaste</kbd> oder <kbd>W</kbd><br>über die Bugs, sammle Bits!</span></div>
+      <div class="ctrl"><span class="emoji">🦠</span><b>Viren-Abwehr</b>
+        <span>Bewegen: <kbd>←</kbd> <kbd>→</kbd> / <kbd>A</kbd> <kbd>D</kbd> · Schießen: <kbd>Leertaste</kbd> / <kbd>W</kbd></span></div>
+    </div>
+  </div>
+  <div class="join-box">
+    <span class="join-lbl">Direkt anmelden</span>
+    <a class="join-link" id="join-link" href="https://albecabrera.github.io/code_arena_spiel/" target="_blank" rel="noopener">albecabrera.github.io/code_arena_spiel</a>
+    <img id="join-qr" alt="QR-Code zum Spiel" width="170" height="170">
+  </div>
+  <button class="btn" id="btn-start">▶ &nbsp;Los geht's!</button>
+</div>
+
+<!-- ================= FRAGE ================= -->
+<div class="screen" id="screen-question">
+  <div class="panel">
+    <div class="center"><span class="q-badge" id="q-badge"></span></div>
+    <div class="q-text" id="q-text"></div>
+    <div class="answers" id="q-answers"></div>
+    <div class="q-feedback" id="q-feedback"></div>
+    <div class="q-progress" id="q-progress"></div>
+  </div>
+</div>
+
+<!-- ================= LEVEL ================= -->
+<div class="screen" id="screen-level">
+  <div class="hud">
+    <div class="hud-item"><span class="lbl">Punkte</span><span id="hud-score">0</span></div>
+    <div class="hud-item"><span class="lbl">Leben</span><span id="hud-lives">❤️❤️❤️</span></div>
+    <div class="timewrap"><div id="hud-timebar"></div></div>
+    <div class="hud-item"><span id="hud-level"></span></div>
+  </div>
+  <div class="gamewrap">
+    <canvas id="game" width="960" height="540"></canvas>
+    <div id="countdown">
+      <div id="cd-name"></div>
+      <div id="cd-hint"></div>
+      <div id="cd-num">3</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= LEVEL-ENDE ================= -->
+<div class="screen" id="screen-levelend">
+  <div class="panel center">
+    <h2 id="le-title" style="font-size:2rem;margin-bottom:6px">Level geschafft! 🎉</h2>
+    <p class="subtitle" id="le-sub" style="margin:0 auto"></p>
+    <div class="stats">
+      <div class="stat"><div class="val" id="le-levelscore">0</div><div class="lbl">Level-Punkte</div></div>
+      <div class="stat"><div class="val" id="le-bonus">0</div><div class="lbl">Leben-Bonus</div></div>
+      <div class="stat"><div class="val" id="le-total">0</div><div class="lbl">Gesamt</div></div>
+    </div>
+    <button class="btn" id="btn-next">Weiter ➜</button>
+  </div>
+</div>
+
+<!-- ================= FEEDBACK ================= -->
+<div class="screen" id="screen-feedback">
+  <div class="panel">
+    <h2 class="center" style="font-size:1.9rem">Deine Meinung zählt! 📝</h2>
+    <p class="subtitle center" style="margin:8px auto 4px">Die Stunde ist vorbei – bevor du gehst, gib bitte kurz Feedback.</p>
+    <div class="fb-field center">
+      <label style="text-align:center">Wie hat dir der Unterricht in diesem Jahr gefallen?</label>
+      <div class="stars" id="fb-stars">
+        <button class="star" data-v="1">⭐</button><button class="star" data-v="2">⭐</button>
+        <button class="star" data-v="3">⭐</button><button class="star" data-v="4">⭐</button>
+        <button class="star" data-v="5">⭐</button>
+      </div>
+    </div>
+    <div class="fb-field"><label>Was hat dir am meisten gefallen?</label>
+      <textarea id="fb-best" placeholder="Schreib hier deine Antwort …"></textarea></div>
+    <div class="fb-field"><label>Was hat dir nicht gefallen?</label>
+      <textarea id="fb-worst" placeholder="Sei ehrlich – es ist anonym!"></textarea></div>
+    <div class="fb-field"><label>Was können wir nächstes Jahr besser machen? (Verbesserungsvorschläge)</label>
+      <textarea id="fb-ideas" placeholder="Deine Ideen …"></textarea></div>
+    <div class="q-feedback no" id="fb-error"></div>
+    <div class="center" style="margin-top:14px"><button class="btn" id="btn-fb-send">Feedback absenden ✔</button></div>
+    <div class="anon-note">🔒 Dein Feedback ist <b>&nbsp;anonym&nbsp;</b> – es wird kein Name gespeichert.</div>
+  </div>
+</div>
+
+<!-- ================= DANKE ================= -->
+<div class="screen" id="screen-thanks">
+  <h1 class="title" style="font-size:clamp(2rem,5vw,3rem)">Danke! 💙</h1>
+  <div class="panel center">
+    <p class="subtitle" style="margin:0 auto 14px">Dein Feedback wurde gespeichert. Hier ist dein Endergebnis:</p>
+    <div class="stats">
+      <div class="stat"><div class="val" id="th-score">0</div><div class="lbl">Punkte</div></div>
+      <div class="stat"><div class="val" id="th-questions">0</div><div class="lbl">Richtige Fragen</div></div>
+      <div class="stat"><div class="val" id="th-levels">0</div><div class="lbl">Level gespielt</div></div>
+    </div>
+    <p class="subtitle" style="margin:0 auto">Schöne Ferien! 🏖️</p>
+    <div class="teacher-note">🙋‍♂️ Übrigens, ich werde euch nächstes Schuljahr in WP8-Informatik unterrichten, ich freue mich riesig darauf!</div>
+  </div>
+</div>
+
+<!-- ================= LEHRERANSICHT ================= -->
+<div class="screen" id="screen-teacher">
+  <div class="panel" style="max-width:960px">
+    <h2 style="font-size:1.7rem">📊 Feedback-Auswertung (Lehrkraft)</h2>
+    <div class="avg-row">
+      <div class="stat"><div class="val" id="t-count">0</div><div class="lbl">Rückmeldungen</div></div>
+      <div class="stat"><div class="val" id="t-avg">–</div><div class="lbl">Ø Bewertung</div></div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="fb">
+        <thead><tr><th>#</th><th>Bewertung</th><th>Am meisten gefallen</th><th>Nicht gefallen</th><th>Verbesserungsvorschläge</th></tr></thead>
+        <tbody id="t-body"></tbody>
+      </table>
+    </div>
+    <div class="row" style="margin-top:18px">
+      <button class="btn small" id="btn-csv">⬇ Als CSV exportieren</button>
+      <button class="btn small secondary" id="btn-refresh">↻ Aktualisieren</button>
+      <button class="btn small secondary" id="btn-clear" style="color:var(--red)">🗑 Alle löschen</button>
+      <button class="btn small secondary" id="btn-back">← Zurück zum Start</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN-Modal -->
+<div class="modal" id="pin-modal">
+  <div class="panel">
+    <b style="font-size:1.1rem">🔑 Lehrkraft-Zugang</b>
+    <input type="password" id="pin-input" maxlength="6" inputmode="numeric" placeholder="PIN">
+    <div class="q-feedback no" id="pin-error" style="margin:0 0 10px"></div>
+    <div class="row">
+      <button class="btn small" id="pin-ok">Öffnen</button>
+      <button class="btn small secondary" id="pin-cancel">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<button id="teacher-link">🔑 Lehrkraft</button>
+
+<script>
+/* =====================================================
+   KONFIGURATION – hier kannst du alles anpassen
+   ===================================================== */
+const KONFIG = {
+  LEVEL_DAUER: 120,        // Spielzeit pro Level in Sekunden (2–5 Min empfohlen)
+  STUNDEN_DAUER: 25 * 60,  // Nach so vielen Sekunden erscheint der Feedbackbogen
+  LEHRER_PIN: "2026",      // PIN für die Lehrkraft-Auswertung
+};
+
+/* ============== FRAGENKATALOG (Multiple Choice) ==============
+   t = Thema, q = Frage, a = Antworten, k = Index der richtigen Antwort */
+const FRAGEN = [
+ // ---- Caesar-Verschlüsselung ----
+ {t:"caesar", q:"Was passiert bei der Caesar-Verschlüsselung mit den Buchstaben?",
+  a:["Sie werden im Alphabet verschoben","Sie werden gespiegelt","Sie werden zufällig vertauscht","Sie werden gelöscht"], k:0},
+ {t:"caesar", q:"Verschlüssle <code>HALLO</code> mit dem Schlüssel 1:",
+  a:["IBMMP","GZKKN","IBNNQ","HALLO"], k:0},
+ {t:"caesar", q:"Mit dem Schlüssel 3 wird aus dem Buchstaben <code>A</code>:",
+  a:["D","C","B","Z"], k:0},
+ {t:"caesar", q:"Wie entschlüsselt man einen Caesar-Text, der mit Schlüssel 5 verschlüsselt wurde?",
+  a:["Jeden Buchstaben 5 Stellen zurückschieben","Jeden Buchstaben 5 Stellen weiterschieben","Den Text rückwärts lesen","Jeden 5. Buchstaben streichen"], k:0},
+ {t:"caesar", q:"Warum ist die Caesar-Verschlüsselung leicht zu knacken?",
+  a:["Es gibt nur 25 mögliche Schlüssel","Man braucht einen Supercomputer","Der Schlüssel steht immer im Text","Sie ist gar nicht knackbar"], k:0},
+ {t:"caesar", q:"Verschlüssle <code>ZUG</code> mit dem Schlüssel 2:",
+  a:["BWI","XSE","AVH","BXI"], k:0},
+ // ---- Binär- und Dezimalsystem ----
+ {t:"binaer", q:"Welche Ziffern gibt es im Binärsystem?",
+  a:["0 und 1","0 bis 9","1 und 2","0, 1 und 2"], k:0},
+ {t:"binaer", q:"<code>1010</code> (binär) = ? (dezimal)",
+  a:["10","12","8","5"], k:0},
+ {t:"binaer", q:"Die Dezimalzahl <code>5</code> lautet im Binärsystem:",
+  a:["101","110","100","11"], k:0},
+ {t:"binaer", q:"<code>1111</code> (binär) = ? (dezimal)",
+  a:["15","16","8","11"], k:0},
+ {t:"binaer", q:"Wie lauten die ersten vier Stellenwerte im Binärsystem (von rechts nach links)?",
+  a:["1, 2, 4, 8","1, 2, 3, 4","2, 4, 6, 8","1, 10, 100, 1000"], k:0},
+ {t:"binaer", q:"Die Dezimalzahl <code>8</code> lautet im Binärsystem:",
+  a:["1000","111","100","1010"], k:0},
+ // ---- Scratch ----
+ {t:"scratch", q:"Wie heißen die Figuren in Scratch?",
+  a:["Sprites","Pixel","Avatare","Icons"], k:0},
+ {t:"scratch", q:"Mit welchem Block startet ein Scratch-Programm meistens?",
+  a:["Wenn 🏳 (grüne Flagge) angeklickt","Sage „Hallo!“","Warte 1 Sekunde","Spiele Klang"], k:0},
+ {t:"scratch", q:"Was macht der Block <code>wiederhole 10 mal</code>?",
+  a:["Er führt die Blöcke darin 10-mal aus","Er wartet 10 Sekunden","Er erstellt 10 Sprites","Er beendet das Programm"], k:0},
+ {t:"scratch", q:"Wofür braucht man den Block <code>falls … dann</code>?",
+  a:["Für Entscheidungen (Bedingungen)","Zum Zeichnen","Zum Speichern","Für Musik"], k:0},
+ {t:"scratch", q:"Was ist eine Variable?",
+  a:["Ein Speicher für einen Wert","Ein Kostüm","Eine Bühne","Ein Fehler im Programm"], k:0},
+ {t:"scratch", q:"Wie heißt der Bereich, auf dem sich die Sprites bewegen?",
+  a:["Bühne","Ebene","Rahmen","Spielfeldrand"], k:0},
+ // ---- XLogo ----
+ {t:"xlogo", q:"Welches Tier zeichnet in XLogo die Linien?",
+  a:["Die Schildkröte","Die Katze","Der Igel","Der Papagei"], k:0},
+ {t:"xlogo", q:"Was zeichnet der Befehl <code>wiederhole 4 [ vw 100 re 90 ]</code>?",
+  a:["Ein Quadrat","Ein Dreieck","Einen Kreis","Eine gerade Linie"], k:0},
+ {t:"xlogo", q:"Was bedeutet der Befehl <code>re 90</code>?",
+  a:["90 Grad nach rechts drehen","90 Schritte rückwärts gehen","90 Sekunden warten","90 Linien zeichnen"], k:0},
+ {t:"xlogo", q:"Was zeichnet der Befehl <code>wiederhole 3 [ vw 100 re 120 ]</code>?",
+  a:["Ein Dreieck","Ein Quadrat","Ein Sechseck","Einen Stern"], k:0},
+ {t:"xlogo", q:"Was macht der Befehl <code>vw 50</code>?",
+  a:["Die Schildkröte geht 50 Schritte vorwärts","Die Schildkröte dreht sich 50 Grad","Das Programm wartet 50 Sekunden","Es werden 50 Kreise gezeichnet"], k:0},
+ {t:"xlogo", q:"Mit welchem Befehl bewegt sich die Schildkröte, OHNE zu zeichnen?",
+  a:["Stift heben (sh)","Stift senken (ss)","radiere","zeige"], k:0},
+];
+const THEMEN = {caesar:"🔐 Caesar-Verschlüsselung", binaer:"🔢 Binär &amp; Dezimal", scratch:"🐱 Scratch", xlogo:"🐢 XLogo"};
+
+/* ================= Hilfsfunktionen ================= */
+const $ = s => document.querySelector(s);
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  const el=$("#"+id); el.classList.remove("active"); void el.offsetWidth; el.classList.add("active");
+  $("#teacher-link").style.display = (id==="screen-start") ? "block" : "none";
+}
+/* ================= Kurzlink & QR ================= */
+(function(){
+  const url=$("#join-link").href;
+  $("#join-qr").src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&margin=0&data="+encodeURIComponent(url);
+})();
+
+function confetti(n=42){
+  const box=$("#confetti-box"), colors=["#22d3ee","#e879f9","#fbbf24","#34d399","#818cf8","#fb7185"];
+  for(let i=0;i<n;i++){
+    const d=document.createElement("div"); d.className="conf";
+    d.style.left=Math.random()*100+"vw";
+    d.style.background=colors[Math.floor(Math.random()*colors.length)];
+    d.style.animationDuration=(0.9+Math.random()*1.4)+"s";
+    d.style.transform="rotate("+Math.random()*360+"deg)";
+    box.appendChild(d); d.addEventListener("animationend",()=>d.remove());
+  }
+}
+
+/* ================= Sternenhimmel-Hintergrund ================= */
+(function(){
+  const c=$("#stars"), x=c.getContext("2d"); let st=[];
+  function size(){ c.width=innerWidth; c.height=innerHeight;
+    st=Array.from({length:110},()=>({x:Math.random()*c.width,y:Math.random()*c.height,
+      r:Math.random()*1.6+.3,s:Math.random()*.35+.08,tw:Math.random()*Math.PI*2}));
+  }
+  size(); addEventListener("resize",size);
+  (function tick(){
+    x.clearRect(0,0,c.width,c.height);
+    for(const s of st){
+      s.y+=s.s; s.tw+=.03; if(s.y>c.height){s.y=-2;s.x=Math.random()*c.width;}
+      x.globalAlpha=.35+Math.sin(s.tw)*.3;
+      x.fillStyle="#cdd6ff"; x.beginPath(); x.arc(s.x,s.y,s.r,0,7); x.fill();
+    }
+    x.globalAlpha=1; requestAnimationFrame(tick);
+  })();
+})();
+
+/* ================= Spielzustand ================= */
+let score=0, richtigeFragen=0, gespielteLevels=0;
+let sessionStart=null, feedbackFaellig=false;
+let fragenPool=shuffle(FRAGEN), frageIdx=0, versuche=0, aktFrage=null;
+const LEVEL_REIHENFOLGE=["dodge","jump","shoot"];
+
+function naechsteFrage(){
+  if(frageIdx>=fragenPool.length){ fragenPool=shuffle(FRAGEN); frageIdx=0; }
+  aktFrage=fragenPool[frageIdx++]; versuche=0;
+  $("#q-badge").className="q-badge "+aktFrage.t;
+  $("#q-badge").innerHTML=THEMEN[aktFrage.t];
+  $("#q-text").innerHTML=aktFrage.q;
+  $("#q-feedback").textContent=""; $("#q-feedback").className="q-feedback";
+  $("#q-progress").textContent="Runde "+(gespielteLevels+1)+" · Punkte: "+score;
+  const box=$("#q-answers"); box.innerHTML="";
+  const idx=shuffle([0,1,2,3]);
+  idx.forEach(i=>{
+    const b=document.createElement("button"); b.className="ans"; b.innerHTML=aktFrage.a[i];
+    if(i===aktFrage.k) b.dataset.ok="1";
+    b.onclick=()=>antwort(b, i===aktFrage.k);
+    box.appendChild(b);
+  });
+  showScreen("screen-question");
+}
+
+function antwort(btn, korrekt){
+  const fb=$("#q-feedback");
+  if(korrekt){
+    btn.classList.add("correct");
+    document.querySelectorAll(".ans").forEach(b=>b.disabled=true);
+    const bonus = versuche===0 ? 50 : 20;
+    score+=bonus; richtigeFragen++;
+    fb.textContent="Richtig! +"+bonus+" Punkte 🎉"; fb.className="q-feedback ok";
+    confetti();
+    setTimeout(()=>starteLevel(LEVEL_REIHENFOLGE[gespielteLevels%3]), 1100);
+  } else {
+    versuche++;
+    btn.classList.add("wrong"); btn.disabled=true;
+    if(versuche>=2){
+      document.querySelectorAll(".ans").forEach(b=>{
+        b.disabled=true;
+        if(b.dataset.ok) b.classList.add("correct");
+      });
+      fb.textContent="Schade! Die richtige Antwort leuchtet grün. Gleich geht's weiter …"; fb.className="q-feedback no";
+      setTimeout(()=>starteLevel(LEVEL_REIHENFOLGE[gespielteLevels%3]), 2300);
+    } else {
+      fb.textContent="Leider falsch – du hast noch einen Versuch! 💪"; fb.className="q-feedback no";
+    }
+  }
+}
+
+/* =====================================================
+   SPIEL-ENGINE
+   ===================================================== */
+const cv=$("#game"), cx=cv.getContext("2d");
+const W=cv.width, H=cv.height;
+const keys=new Set();
+const WASD={a:"ArrowLeft",A:"ArrowLeft",d:"ArrowRight",D:"ArrowRight",w:"ArrowUp",W:"ArrowUp"};
+function normKey(k){ return k===" "?"Space":(WASD[k]||k); }
+addEventListener("keydown",e=>{
+  if(["ArrowLeft","ArrowRight","ArrowUp"," ","Spacebar","a","A","d","D","w","W"].includes(e.key)) e.preventDefault();
+  const k=normKey(e.key);
+  keys.add(k);
+  if(level && (k==="Space"||k==="ArrowUp")) level.press && level.press();
+});
+addEventListener("keyup",e=>keys.delete(normKey(e.key)));
+
+let level=null, raf=null, lastT=0, laufend=false;
+let leben=3, levelScore=0, levelZeit=0;
+let particles=[], floaters=[], shake=0;
+
+const LEVEL_INFO={
+  dodge:{name:"☄️ METEORSTURM", hint:"Bewege dein Raumschiff mit ← und →. Weiche den Meteoriten aus und sammle die grünen Datenchips!"},
+  jump:{name:"🤖 BUG-RUN", hint:"Drücke die LEERTASTE zum Springen. Weiche den roten Bugs aus und sammle die goldenen Bits!"},
+  shoot:{name:"🦠 VIREN-ABWEHR", hint:"Bewege dich mit ← und →, schieße mit der LEERTASTE. Lass keinen Virus nach unten durch!"}
+};
+
+function starteLevel(typ){
+  if(!sessionStart) sessionStart=Date.now();
+  leben=3; levelScore=0; levelZeit=KONFIG.LEVEL_DAUER;
+  particles=[]; floaters=[]; shake=0;
+  level = typ==="dodge" ? new LevelDodge() : typ==="jump" ? new LevelJump() : new LevelShoot();
+  level.typ=typ;
+  $("#hud-level").textContent=LEVEL_INFO[typ].name;
+  updateHUD();
+  showScreen("screen-level");
+  // Countdown
+  const cd=$("#countdown"); cd.classList.add("show");
+  $("#cd-name").textContent=LEVEL_INFO[typ].name;
+  $("#cd-hint").textContent=LEVEL_INFO[typ].hint;
+  let n=3; $("#cd-num").textContent=n;
+  render(); // erstes Standbild
+  const iv=setInterval(()=>{
+    n--; if(n<=0){ clearInterval(iv); cd.classList.remove("show");
+      laufend=true; lastT=performance.now(); raf=requestAnimationFrame(loop);
+    } else $("#cd-num").textContent=n;
+  },900);
+}
+
+function loop(t){
+  if(!laufend) return;
+  raf=requestAnimationFrame(loop);
+  const dt=Math.min((t-lastT)/1000,.05); lastT=t;
+  levelZeit-=dt;
+  if(levelZeit<=0 || leben<=0){ endeLevel(); return; }
+  level.update(dt);
+  for(const p of particles){ p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=p.g*dt; p.life-=dt; }
+  particles=particles.filter(p=>p.life>0);
+  for(const f of floaters){ f.y-=40*dt; f.life-=dt; }
+  floaters=floaters.filter(f=>f.life>0);
+  if(shake>0) shake=Math.max(0,shake-dt*22);
+  render(); updateHUD();
+}
+
+function updateHUD(){
+  $("#hud-score").textContent=score+levelScore;
+  $("#hud-lives").textContent="❤️".repeat(Math.max(0,leben))+"🖤".repeat(Math.max(0,3-leben));
+  $("#hud-timebar").style.width=Math.max(0,levelZeit/KONFIG.LEVEL_DAUER*100)+"%";
+}
+
+function punkte(n,x,y,farbe){
+  levelScore+=n;
+  floaters.push({x,y,txt:(n>0?"+":"")+n,life:1,farbe:farbe||"#fbbf24"});
+}
+function explosion(x,y,farbe,n=16){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, sp=60+Math.random()*220;
+    particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,g:260,life:.5+Math.random()*.5,r:2+Math.random()*3,farbe});
+  }
+}
+function treffer(){ leben--; shake=8; }
+
+function render(){
+  cx.save();
+  if(shake>0) cx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+  // Hintergrund
+  const g=cx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,"#0a0e22"); g.addColorStop(1,"#141033");
+  cx.fillStyle=g; cx.fillRect(-10,-10,W+20,H+20);
+  // dezente Rasterlinien
+  cx.strokeStyle="rgba(129,140,248,.07)"; cx.lineWidth=1;
+  for(let x=0;x<W;x+=60){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,H);cx.stroke();}
+  for(let y=0;y<H;y+=60){cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke();}
+  level && level.draw();
+  // Partikel
+  for(const p of particles){
+    cx.globalAlpha=Math.max(0,p.life); cx.fillStyle=p.farbe;
+    cx.beginPath(); cx.arc(p.x,p.y,p.r,0,7); cx.fill();
+  }
+  cx.globalAlpha=1;
+  // Punkte-Popups
+  cx.font="bold 22px system-ui"; cx.textAlign="center";
+  for(const f of floaters){
+    cx.globalAlpha=Math.max(0,f.life); cx.fillStyle=f.farbe;
+    cx.fillText(f.txt,f.x,f.y);
+  }
+  cx.globalAlpha=1;
+  cx.restore();
+}
+
+/* ---------- Zeichen-Helfer ---------- */
+function glow(farbe,blur){ cx.shadowColor=farbe; cx.shadowBlur=blur; }
+function noGlow(){ cx.shadowBlur=0; }
+function schiff(x,y,farbe){
+  glow(farbe,22);
+  cx.fillStyle=farbe;
+  cx.beginPath(); cx.moveTo(x,y-26); cx.lineTo(x-20,y+18); cx.lineTo(x,y+8); cx.lineTo(x+20,y+18); cx.closePath(); cx.fill();
+  noGlow();
+  cx.fillStyle="#fff"; cx.beginPath(); cx.arc(x,y-4,5,0,7); cx.fill();
+  // Triebwerk
+  glow("#fbbf24",16); cx.fillStyle="#fbbf24";
+  const fl=6+Math.random()*7;
+  cx.beginPath(); cx.moveTo(x-7,y+16); cx.lineTo(x,y+16+fl); cx.lineTo(x+7,y+16); cx.closePath(); cx.fill();
+  noGlow();
+}
+
+/* =============== LEVEL 1: METEORSTURM (Ausweichen) =============== */
+class LevelDodge{
+  constructor(){
+    this.px=W/2; this.speed=430; this.inv=0;
+    this.meteore=[]; this.chips=[]; this.tM=0; this.tC=1.2; this.zeit=0;
+  }
+  update(dt){
+    this.zeit+=dt; this.inv=Math.max(0,this.inv-dt);
+    if(keys.has("ArrowLeft")) this.px-=this.speed*dt;
+    if(keys.has("ArrowRight")) this.px+=this.speed*dt;
+    this.px=Math.max(28,Math.min(W-28,this.px));
+    // Spawnen (wird mit der Zeit schneller)
+    this.tM-=dt;
+    if(this.tM<=0){
+      this.tM=Math.max(.28,.85-this.zeit*.006);
+      this.meteore.push({x:30+Math.random()*(W-60),y:-30,r:14+Math.random()*16,
+        vy:150+Math.random()*130+this.zeit*1.4,rot:Math.random()*7,vr:(Math.random()-.5)*3});
+    }
+    this.tC-=dt;
+    if(this.tC<=0){ this.tC=2.2+Math.random()*1.4;
+      this.chips.push({x:40+Math.random()*(W-80),y:-20,vy:130,puls:0}); }
+    const py=H-58;
+    for(const m of this.meteore){ m.y+=m.vy*dt; m.rot+=m.vr*dt;
+      if(this.inv<=0 && Math.hypot(m.x-this.px,m.y-py)<m.r+18){
+        m.y=H+999; treffer(); explosion(this.px,py,"#fb7185",22); this.inv=1.4;
+      }
+    }
+    this.meteore=this.meteore.filter(m=>m.y<H+40);
+    for(const c of this.chips){ c.y+=c.vy*dt; c.puls+=dt*6;
+      if(Math.hypot(c.x-this.px,c.y-py)<32){
+        punkte(10,c.x,c.y,"#34d399"); explosion(c.x,c.y,"#34d399",10); c.y=H+999;
+      }
+    }
+    this.chips=this.chips.filter(c=>c.y<H+30);
+  }
+  draw(){
+    for(const m of this.meteore){
+      cx.save(); cx.translate(m.x,m.y); cx.rotate(m.rot);
+      glow("#fb7185",14); cx.fillStyle="#7c3f57";
+      cx.beginPath();
+      for(let i=0;i<8;i++){const a=i/8*Math.PI*2, rr=m.r*(0.82+((i*7)%5)/14);
+        i?cx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):cx.moveTo(Math.cos(a)*rr,Math.sin(a)*rr);}
+      cx.closePath(); cx.fill(); noGlow();
+      cx.fillStyle="rgba(0,0,0,.3)";
+      cx.beginPath(); cx.arc(-m.r*.3,-m.r*.2,m.r*.22,0,7); cx.fill();
+      cx.beginPath(); cx.arc(m.r*.25,m.r*.3,m.r*.16,0,7); cx.fill();
+      cx.restore();
+    }
+    for(const c of this.chips){
+      const s=14+Math.sin(c.puls)*2;
+      glow("#34d399",18); cx.fillStyle="#34d399";
+      cx.save(); cx.translate(c.x,c.y); cx.rotate(.6);
+      cx.fillRect(-s/2,-s/2,s,s); noGlow();
+      cx.fillStyle="#052e1e"; cx.font="bold 11px monospace"; cx.textAlign="center";
+      cx.fillText("01",0,4); cx.restore();
+    }
+    if(this.inv<=0 || Math.floor(this.inv*10)%2===0) schiff(this.px,H-58,"#22d3ee");
+  }
+}
+
+/* =============== LEVEL 2: BUG-RUN (Springen) =============== */
+class LevelJump{
+  constructor(){
+    this.gy=H-72; this.py=this.gy; this.vy=0; this.amBoden=true; this.inv=0;
+    this.hindernisse=[]; this.bits=[]; this.tH=1.2; this.tB=.8;
+    this.vx=330; this.zeit=0; this.beinPhase=0;
+  }
+  press(){ if(this.amBoden){ this.vy=-830; this.amBoden=false; } }
+  update(dt){
+    this.zeit+=dt; this.inv=Math.max(0,this.inv-dt);
+    this.vx=330+this.zeit*2.2; this.beinPhase+=dt*14;
+    this.vy+=2300*dt; this.py+=this.vy*dt;
+    if(this.py>=this.gy){ this.py=this.gy; this.vy=0; this.amBoden=true; }
+    this.tH-=dt;
+    if(this.tH<=0){ this.tH=.95+Math.random()*.9;
+      const doppel=Math.random()<.25;
+      this.hindernisse.push({x:W+30,h:34+Math.random()*26,w:doppel?64:32}); }
+    this.tB-=dt;
+    if(this.tB<=0){ this.tB=1.4+Math.random()*1.2;
+      this.bits.push({x:W+20,y:this.gy-60-Math.random()*120,puls:Math.random()*6}); }
+    const px=150;
+    for(const h of this.hindernisse){ h.x-=this.vx*dt;
+      if(this.inv<=0 && px+16>h.x-h.w/2 && px-16<h.x+h.w/2 && this.py+2>this.gy-h.h){
+        h.x=-999; treffer(); explosion(px,this.py-20,"#fb7185",20); this.inv=1.5;
+      }
+    }
+    this.hindernisse=this.hindernisse.filter(h=>h.x>-80);
+    for(const b of this.bits){ b.x-=this.vx*dt; b.puls+=dt*7;
+      if(Math.hypot(b.x-px,b.y-(this.py-22))<34){
+        punkte(10,b.x,b.y,"#fbbf24"); explosion(b.x,b.y,"#fbbf24",10); b.x=-999;
+      }
+    }
+    this.bits=this.bits.filter(b=>b.x>-40);
+  }
+  draw(){
+    // Boden
+    glow("#818cf8",10);
+    cx.fillStyle="#241d4d"; cx.fillRect(0,this.gy+22,W,H-this.gy);
+    cx.strokeStyle="#818cf8"; cx.lineWidth=3;
+    cx.beginPath(); cx.moveTo(0,this.gy+22); cx.lineTo(W,this.gy+22); cx.stroke(); noGlow();
+    // Bits (Münzen)
+    for(const b of this.bits){
+      const r=13+Math.sin(b.puls)*1.6;
+      glow("#fbbf24",16); cx.fillStyle="#fbbf24";
+      cx.beginPath(); cx.arc(b.x,b.y,r,0,7); cx.fill(); noGlow();
+      cx.fillStyle="#78350f"; cx.font="bold 13px monospace"; cx.textAlign="center";
+      cx.fillText("1",b.x,b.y+5);
+    }
+    // Bugs (Hindernisse)
+    for(const h of this.hindernisse){
+      glow("#fb7185",14); cx.fillStyle="#fb7185";
+      const bx=h.x, by=this.gy+22;
+      cx.beginPath(); cx.ellipse(bx,by-h.h/2,h.w/2,h.h/2,0,0,7); cx.fill(); noGlow();
+      // Beinchen + Augen
+      cx.strokeStyle="#fb7185"; cx.lineWidth=3;
+      for(const s of [-1,1]) for(let i=0;i<3;i++){
+        cx.beginPath(); cx.moveTo(bx+s*h.w/2, by-h.h*.25-i*9);
+        cx.lineTo(bx+s*(h.w/2+9), by-h.h*.15-i*9); cx.stroke();
+      }
+      cx.fillStyle="#fff";
+      cx.beginPath(); cx.arc(bx-6,by-h.h*.65,4,0,7); cx.arc(bx+6,by-h.h*.65,4,0,7); cx.fill();
+      cx.fillStyle="#111";
+      cx.beginPath(); cx.arc(bx-5,by-h.h*.65,2,0,7); cx.arc(bx+7,by-h.h*.65,2,0,7); cx.fill();
+    }
+    // Roboter-Spieler
+    if(this.inv<=0 || Math.floor(this.inv*10)%2===0){
+      const px=150, py=this.py;
+      glow("#22d3ee",18); cx.fillStyle="#22d3ee";
+      cx.beginPath(); cx.roundRect(px-18,py-42,36,36,9); cx.fill(); noGlow();
+      // Antenne
+      cx.strokeStyle="#22d3ee"; cx.lineWidth=3;
+      cx.beginPath(); cx.moveTo(px,py-42); cx.lineTo(px,py-52); cx.stroke();
+      cx.fillStyle="#fbbf24"; cx.beginPath(); cx.arc(px,py-55,4,0,7); cx.fill();
+      // Augen
+      cx.fillStyle="#0b1026"; cx.fillRect(px-11,py-33,8,9); cx.fillRect(px+3,py-33,8,9);
+      cx.fillStyle="#fff"; cx.fillRect(px-9,py-31,4,5); cx.fillRect(px+5,py-31,4,5);
+      // Beine (laufen)
+      cx.strokeStyle="#22d3ee"; cx.lineWidth=4;
+      const l=this.amBoden?Math.sin(this.beinPhase)*8:5;
+      cx.beginPath(); cx.moveTo(px-9,py-6); cx.lineTo(px-9+l,py+8); cx.stroke();
+      cx.beginPath(); cx.moveTo(px+9,py-6); cx.lineTo(px+9-l,py+8); cx.stroke();
+    }
+  }
+}
+
+/* =============== LEVEL 3: VIREN-ABWEHR (Schießen) =============== */
+class LevelShoot{
+  constructor(){
+    this.px=W/2; this.speed=430; this.inv=0; this.cool=0;
+    this.schuesse=[]; this.viren=[]; this.tV=.9; this.zeit=0;
+  }
+  press(){
+    if(this.cool<=0){
+      this.cool=.28;
+      this.schuesse.push({x:this.px,y:H-84});
+    }
+  }
+  update(dt){
+    this.zeit+=dt; this.inv=Math.max(0,this.inv-dt); this.cool-=dt;
+    if(keys.has("ArrowLeft")) this.px-=this.speed*dt;
+    if(keys.has("ArrowRight")) this.px+=this.speed*dt;
+    this.px=Math.max(28,Math.min(W-28,this.px));
+    if(keys.has("Space")) this.press();
+    this.tV-=dt;
+    if(this.tV<=0){ this.tV=Math.max(.4,1.1-this.zeit*.007);
+      this.viren.push({x:50+Math.random()*(W-100),y:-26,vy:70+Math.random()*70+this.zeit*.9,
+        ph:Math.random()*7,r:20+Math.random()*8}); }
+    for(const s of this.schuesse) s.y-=720*dt;
+    this.schuesse=this.schuesse.filter(s=>s.y>-20);
+    const py=H-58;
+    for(const v of this.viren){
+      v.y+=v.vy*dt; v.ph+=dt*3; v.x+=Math.sin(v.ph)*40*dt;
+      for(const s of this.schuesse){
+        if(Math.hypot(v.x-s.x,v.y-s.y)<v.r+6){
+          v.tot=true; s.y=-999; punkte(15,v.x,v.y,"#e879f9"); explosion(v.x,v.y,"#e879f9",16);
+        }
+      }
+      if(!v.tot && v.y>H-86){ v.tot=true; treffer(); explosion(v.x,H-80,"#fb7185",18); }
+      if(!v.tot && this.inv<=0 && Math.hypot(v.x-this.px,v.y-py)<v.r+18){
+        v.tot=true; treffer(); explosion(this.px,py,"#fb7185",20); this.inv=1.3;
+      }
+    }
+    this.viren=this.viren.filter(v=>!v.tot);
+  }
+  draw(){
+    // Schutzlinie
+    cx.strokeStyle="rgba(251,113,133,.4)"; cx.setLineDash([10,10]); cx.lineWidth=2;
+    cx.beginPath(); cx.moveTo(0,H-84); cx.lineTo(W,H-84); cx.stroke(); cx.setLineDash([]);
+    // Schüsse
+    glow("#22d3ee",14); cx.fillStyle="#a5f3fc";
+    for(const s of this.schuesse) cx.fillRect(s.x-3,s.y-14,6,18);
+    noGlow();
+    // Viren
+    for(const v of this.viren){
+      cx.save(); cx.translate(v.x,v.y); cx.rotate(v.ph*.5);
+      glow("#e879f9",16); cx.fillStyle="#c026d3";
+      cx.beginPath(); cx.arc(0,0,v.r,0,7); cx.fill();
+      cx.strokeStyle="#e879f9"; cx.lineWidth=4;
+      for(let i=0;i<8;i++){ const a=i/8*Math.PI*2;
+        cx.beginPath(); cx.moveTo(Math.cos(a)*v.r,Math.sin(a)*v.r);
+        cx.lineTo(Math.cos(a)*(v.r+9),Math.sin(a)*(v.r+9)); cx.stroke(); }
+      noGlow();
+      cx.fillStyle="#fdf4ff";
+      cx.beginPath(); cx.arc(-v.r*.32,-v.r*.15,v.r*.2,0,7); cx.arc(v.r*.3,v.r*.2,v.r*.15,0,7); cx.fill();
+      cx.restore();
+    }
+    if(this.inv<=0 || Math.floor(this.inv*10)%2===0) schiff(this.px,H-58,"#34d399");
+  }
+}
+
+/* ================= Level-Ende ================= */
+function endeLevel(){
+  laufend=false; cancelAnimationFrame(raf);
+  gespielteLevels++;
+  const bonus=Math.max(0,leben)*25;
+  score+=levelScore+bonus;
+  $("#le-title").textContent = leben>0 ? "Level geschafft! 🎉" : "Alle Leben verloren! 💥";
+  $("#le-sub").textContent = leben>0 ? "Stark gespielt – weiter geht's!" : "Kopf hoch, nächste Runde läuft besser!";
+  $("#le-levelscore").textContent=levelScore;
+  $("#le-bonus").textContent="+"+bonus;
+  $("#le-total").textContent=score;
+  const elapsed=(Date.now()-sessionStart)/1000;
+  feedbackFaellig = elapsed>=KONFIG.STUNDEN_DAUER;
+  $("#btn-next").textContent = feedbackFaellig ? "Zum Feedback ➜" : "Weiter ➜";
+  showScreen("screen-levelend");
+}
+$("#btn-next").onclick=()=>{ feedbackFaellig ? showScreen("screen-feedback") : naechsteFrage(); };
+$("#btn-start").onclick=()=>{ sessionStart=Date.now(); naechsteFrage(); };
+
+/* =====================================================
+   FEEDBACK (anonym, geteilter Speicher) & LEHRERANSICHT
+   ===================================================== */
+let fbRating=0;
+document.querySelectorAll("#fb-stars .star").forEach(s=>{
+  s.onclick=()=>{
+    fbRating=+s.dataset.v;
+    document.querySelectorAll("#fb-stars .star").forEach(x=>
+      x.classList.toggle("on", +x.dataset.v<=fbRating));
+  };
+});
+
+async function speichereFeedback(daten){
+  // Geteilter Speicher: alle Geräte schreiben in denselben anonymen Datenpool
+  if(!window.storage) throw new Error("kein Speicher");
+  const id="feedback:"+Math.random().toString(36).slice(2,10)+Math.random().toString(36).slice(2,6);
+  const res=await window.storage.set(id, JSON.stringify(daten), true);
+  if(!res) throw new Error("Speichern fehlgeschlagen");
+}
+
+$("#btn-fb-send").onclick=async ()=>{
+  const err=$("#fb-error");
+  if(fbRating===0){ err.textContent="Bitte wähle zuerst eine Sterne-Bewertung aus."; return; }
+  err.textContent="";
+  const daten={
+    bewertung: fbRating,
+    gefallen: $("#fb-best").value.trim(),
+    nicht_gefallen: $("#fb-worst").value.trim(),
+    verbesserung: $("#fb-ideas").value.trim(),
+  };
+  $("#btn-fb-send").disabled=true; $("#btn-fb-send").textContent="Wird gespeichert …";
+  try{ await speichereFeedback(daten); }
+  catch(e){
+    console.error(e);
+    err.textContent="Hinweis: Online-Speicherung nicht verfügbar – dein Feedback wurde nur lokal angezeigt.";
+  }
+  $("#th-score").textContent=score;
+  $("#th-questions").textContent=richtigeFragen;
+  $("#th-levels").textContent=gespielteLevels;
+  confetti(70);
+  showScreen("screen-thanks");
+  setTimeout(()=>confetti(60), 400);
+  setTimeout(()=>confetti(60), 900);
+};
+
+/* ---------- Lehreransicht ---------- */
+const pinModal=$("#pin-modal");
+$("#teacher-link").onclick=()=>{ pinModal.classList.add("show"); $("#pin-input").value=""; $("#pin-error").textContent=""; setTimeout(()=>$("#pin-input").focus(),50); };
+$("#pin-cancel").onclick=()=>pinModal.classList.remove("show");
+$("#pin-input").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#pin-ok").click(); });
+$("#pin-ok").onclick=async ()=>{
+  if($("#pin-input").value!==KONFIG.LEHRER_PIN){ $("#pin-error").textContent="Falsche PIN."; return; }
+  pinModal.classList.remove("show");
+  await ladeAuswertung();
+  showScreen("screen-teacher");
+};
+
+let auswertung=[];
+async function ladeAuswertung(){
+  auswertung=[];
+  const body=$("#t-body"); body.innerHTML="";
+  try{
+    const liste=await window.storage.list("feedback:", true);
+    const schluessel=(liste && liste.keys) ? liste.keys : [];
+    for(const k of schluessel){
+      try{
+        const r=await window.storage.get(k, true);
+        if(r && r.value) auswertung.push({key:k, ...JSON.parse(r.value)});
+      }catch(e){/* Eintrag überspringen */}
+    }
+  }catch(e){
+    body.innerHTML='<tr><td colspan="5">Kein geteilter Speicher verfügbar oder noch keine Rückmeldungen.</td></tr>';
+  }
+  $("#t-count").textContent=auswertung.length;
+  if(auswertung.length){
+    const avg=auswertung.reduce((s,f)=>s+(+f.bewertung||0),0)/auswertung.length;
+    $("#t-avg").textContent=avg.toFixed(1)+" ★";
+    const esc=t=>(t||"–").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    body.innerHTML=auswertung.map((f,i)=>
+      "<tr><td>"+(i+1)+"</td><td>"+"⭐".repeat(+f.bewertung||0)+" ("+(f.bewertung||"?")+")</td>"+
+      "<td>"+esc(f.gefallen)+"</td><td>"+esc(f.nicht_gefallen)+"</td><td>"+esc(f.verbesserung)+"</td></tr>"
+    ).join("");
+  } else {
+    $("#t-avg").textContent="–";
+    if(!body.innerHTML) body.innerHTML='<tr><td colspan="5">Noch keine Rückmeldungen eingegangen.</td></tr>';
+  }
+}
+$("#btn-refresh").onclick=ladeAuswertung;
+$("#btn-back").onclick=()=>showScreen("screen-start");
+
+$("#btn-csv").onclick=()=>{
+  const esc=t=>'"'+String(t||"").replace(/"/g,'""')+'"';
+  let csv="\uFEFFNr;Bewertung (1-5);Am meisten gefallen;Nicht gefallen;Verbesserungsvorschlaege\n";
+  auswertung.forEach((f,i)=>{
+    csv+=[i+1,f.bewertung,esc(f.gefallen),esc(f.nicht_gefallen),esc(f.verbesserung)].join(";")+"\n";
+  });
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download="feedback-auswertung.csv"; a.click(); URL.revokeObjectURL(a.href);
+};
+
+$("#btn-clear").onclick=async ()=>{
+  if(!confirm("Wirklich ALLE Rückmeldungen unwiderruflich löschen?")) return;
+  for(const f of auswertung){
+    try{ await window.storage.delete(f.key, true); }catch(e){}
+  }
+  await ladeAuswertung();
+};
+</script>
+</body>
+</html>
